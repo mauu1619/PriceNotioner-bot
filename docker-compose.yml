@@ -1,0 +1,90 @@
+services:
+    db:
+        image: postgres:16-alpine
+        container_name: pars_bot_db
+        restart: always
+        environment:
+            # Using a dedicated user. Use .env to override these securely in production.
+            POSTGRES_USER: ${DB_USER:-parsbot}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-parsbot_password}
+            POSTGRES_DB: ${DB_NAME:-pars_bot}
+        # Ports ARE exposed to the host machine for local development/migrations
+        ports:
+            - "5433:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${DB_USER:-parsbot} -d ${DB_NAME:-pars_bot}",
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    redis:
+        image: redis:7-alpine
+        container_name: pars_bot_redis
+        restart: always
+        # Ports are NOT exposed to the host machine for security
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    bot:
+        build: .
+        container_name: pars_bot_app
+        restart: always
+        depends_on:
+            db:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        env_file:
+            - .env
+        environment:
+            # Override database URL to point to docker internal network with the restricted user
+            DATABASE_URL: postgresql+asyncpg://${DB_USER:-parsbot}:${DB_PASSWORD:-parsbot_password}@db:5432/${DB_NAME:-pars_bot}
+            REDIS_URL: redis://redis:6379/0
+        # Command runs alembic migrations first, then starts the bot
+        command: bash -c "alembic upgrade head && python -m src.db.seed && python -m src.main"
+
+    worker:
+        build: .
+        container_name: pars_bot_worker
+        restart: always
+        depends_on:
+            db:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            bot:
+                condition: service_started
+        env_file:
+            - .env
+        environment:
+            DATABASE_URL: postgresql+asyncpg://${DB_USER:-parsbot}:${DB_PASSWORD:-parsbot_password}@db:5432/${DB_NAME:-pars_bot}
+            REDIS_URL: redis://redis:6379/0
+        command: taskiq worker src.tasks.broker:broker src.tasks.price_check
+
+    scheduler:
+        build: .
+        container_name: pars_bot_scheduler
+        restart: always
+        depends_on:
+            redis:
+                condition: service_healthy
+            bot:
+                condition: service_started
+        env_file:
+            - .env
+        environment:
+            DATABASE_URL: postgresql+asyncpg://${DB_USER:-parsbot}:${DB_PASSWORD:-parsbot_password}@db:5432/${DB_NAME:-pars_bot}
+            REDIS_URL: redis://redis:6379/0
+        command: taskiq scheduler src.tasks.broker:scheduler src.tasks.price_check
+
+volumes:
+    postgres_data:
