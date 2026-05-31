@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
@@ -94,7 +94,7 @@ async def process_target_price(
         target_price = Decimal(message.text.replace(",", "."))
         if target_price <= 0:
             raise ValueError
-    except ValueError:
+    except (ValueError, InvalidOperation):
         logger.debug(f"User {db_user.id} provided invalid target price: {message.text}")
         await message.answer(
             "⚠️ Пожалуйста, введи корректную цену (целое число больше нуля)."
@@ -298,7 +298,7 @@ async def process_edit_target_finish(
         target_price = Decimal(message.text.replace(",", "."))
         if target_price <= 0:
             raise ValueError
-    except ValueError:
+    except (ValueError, InvalidOperation):
         await message.answer("⚠️ Пожалуйста, введи корректную цену.")
         return
 
@@ -354,7 +354,7 @@ async def process_edit_threshold_finish(
         threshold = Decimal(message.text.replace(",", "."))
         if threshold < 0:
             raise ValueError
-    except ValueError:
+    except (ValueError, InvalidOperation):
         await message.answer("⚠️ Пожалуйста, введи корректное число.")
         return
 

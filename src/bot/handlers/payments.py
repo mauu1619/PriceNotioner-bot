@@ -25,8 +25,11 @@ async def cmd_my_subscriptions(message: Message, db_user: User, db_session):
         f"⏱ Интервал проверки: каждые <b>{current_plan.check_interval_minutes} мин.</b>\n\n"
     )
 
-    if current_plan.name == "Pro" and db_user.subscription_expires_at:
-        text += f"📅 Подписка активна до: <b>{db_user.subscription_expires_at.strftime('%Y-%m-%d %H:%M')}</b>"
+    if current_plan.name == "Pro":
+        if db_user.subscription_expires_at:
+            text += f"📅 Подписка активна до: <b>{db_user.subscription_expires_at.strftime('%Y-%m-%d %H:%M')}</b>"
+        else:
+            text += "📅 Подписка: <b>Бессрочно</b> ✨"
         await message.answer(text)
         return
 

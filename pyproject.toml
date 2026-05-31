@@ -13,11 +13,12 @@ dependencies = [
     "redis>=5.0.3",
     "python-dotenv>=1.0.1",
     "aiohttp-socks>=0.11.0",
-    "httpx[socks]>=0.28.1",
+    "httpx[http2,socks]>=0.28.1",
     "fake-useragent>=2.2.0",
     "loguru>=0.7.3",
     "taskiq>=0.12.4",
     "taskiq-redis>=1.2.2",
+    "curl-cffi>=0.7.1",
 ]
 
 [dependency-groups]

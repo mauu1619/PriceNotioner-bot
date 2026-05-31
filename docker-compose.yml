@@ -9,8 +9,6 @@ services:
             POSTGRES_PASSWORD: ${DB_PASSWORD:-parsbot_password}
             POSTGRES_DB: ${DB_NAME:-pars_bot}
         # Ports ARE exposed to the host machine for local development/migrations
-        ports:
-            - "5433:5432"
         volumes:
             - postgres_data:/var/lib/postgresql/data
         healthcheck:
