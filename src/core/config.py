@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     REDIS_URL: str
     PROXY_URL: str | None = None
     LOG_FORMAT: str = "text"  # 'text' or 'json'
+    LOG_DIR: str = "logs"
     ADMIN_IDS: list[int] = []
     USE_PROXY_FOR_PARSER: bool = True
 

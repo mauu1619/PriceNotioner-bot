@@ -36,6 +36,8 @@ services:
         build: .
         container_name: pars_bot_app
         restart: always
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         depends_on:
             db:
                 condition: service_healthy
@@ -47,6 +49,8 @@ services:
             # Override database URL to point to docker internal network with the restricted user
             DATABASE_URL: postgresql+asyncpg://${DB_USER:-parsbot}:${DB_PASSWORD:-parsbot_password}@db:5432/${DB_NAME:-pars_bot}
             REDIS_URL: redis://redis:6379/0
+        volumes:
+            - app_logs:/app/logs
         # Command runs alembic migrations first, then starts the bot
         command: bash -c "alembic upgrade head && python -m src.db.seed && python -m src.main"
 
@@ -54,6 +58,8 @@ services:
         build: .
         container_name: pars_bot_worker
         restart: always
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         depends_on:
             db:
                 condition: service_healthy
@@ -66,12 +72,16 @@ services:
         environment:
             DATABASE_URL: postgresql+asyncpg://${DB_USER:-parsbot}:${DB_PASSWORD:-parsbot_password}@db:5432/${DB_NAME:-pars_bot}
             REDIS_URL: redis://redis:6379/0
+        volumes:
+            - app_logs:/app/logs
         command: taskiq worker src.tasks.broker:broker src.tasks.price_check
 
     scheduler:
         build: .
         container_name: pars_bot_scheduler
         restart: always
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         depends_on:
             redis:
                 condition: service_healthy
@@ -82,7 +92,10 @@ services:
         environment:
             DATABASE_URL: postgresql+asyncpg://${DB_USER:-parsbot}:${DB_PASSWORD:-parsbot_password}@db:5432/${DB_NAME:-pars_bot}
             REDIS_URL: redis://redis:6379/0
+        volumes:
+            - app_logs:/app/logs
         command: taskiq scheduler src.tasks.broker:scheduler src.tasks.price_check
 
 volumes:
     postgres_data:
+    app_logs:
