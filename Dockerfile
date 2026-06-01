@@ -36,6 +36,9 @@ COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 # Copy the application code, setting ownership
 COPY --chown=appuser:appuser . .
 
+# Create logs directory and set ownership
+RUN mkdir -p /app/logs && chown appuser:appuser /app/logs
+
 # Switch to the non-root user
 USER appuser
 
