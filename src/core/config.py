@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     PROXY_URL: str | None = None
     LOG_FORMAT: str = "text"  # 'text' or 'json'
     LOG_DIR: str = "logs"
-    ADMIN_IDS: list[int] = []
+    ADMIN_IDS: list[int] | str = []
     USE_PROXY_FOR_PARSER: bool = True
 
     @field_validator("ADMIN_IDS", mode="before")
